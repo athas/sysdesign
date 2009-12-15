@@ -1,0 +1,39 @@
+eksisterende versionscontrol vs egen udvikling:
+for mange features i f.eks. git?
+vi laver vores eget, uden delta til at starte med.
+nyeste fil har ingen revision-endelse, ved ny revision navngives files til højeste revision
+
+Fil-struktur:
+for at undgå at fylde mapper med alt for mange revisions af samme filer oprettes en revision mappe til hver fil.
+
+Måde at tilgå gamle revisions:
+suffix filnavn med semi-kolon efterfulgt af tal. Vi tillader ikke brugeren at oprette filer med et filnavn afsluttet med semikolon+tal.
+ls skal har reserveret: ;*
+
+revisions af foldere:
+foldere skal kun gemmes ved sletning. De gemmes ved et hardlink. Der slettes ved at fjere hardlink.
+
+sletning af filer:
+når en fil slettes fjernes hardlink. hvis en ny oprettes får den sidste revision+2. manglende revisions betyder sletninger.
+
+filerevisions synlige som standard:
+uoverskueligt at have mange ens filer.
+vi viser kun nyeste fil og giver et interface til at tilgå gamle revisions.
+
+valg af sprog:
+python fordi det er nemt.
+
+ved rename:
+filnavn ændres og vores implementation ændrer den interne folder. Handler om om at undgå datatab og ikke at logge.
+
+sletning:
+keep-all, men optimalt på dokument-folderen: keep-all for den første måned. Herefter landmarks der samler flere writes indenfor x antal minutter/timer til den seneste af de revisions.
+
+delta:
+nyeste filrevision gemmes fuldt, deltaer laves som reverse-deltas.
+
+garbage-collection:
+hver revision-folder indeholder en .unlock som garbage-collectoren+filsystemet renamer til .locked under brug. rename er atomic så derfor kan kun en process have adgang til folderen af gangen.
+
+links:
+må gennemgås senere.
