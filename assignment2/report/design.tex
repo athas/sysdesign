@@ -1,80 +1,103 @@
 \documentclass[12pt]{article}
-
+ 
 \author{
         Troels, Troels, Kasper
 }
 \date{\today}
-
+ 
 \title{Design}
-
+ 
 \begin{document}
-
+ 
 \maketitle
-
+ 
 \section{Introduction}
 This is time for all good men to come to the aid of their party!
-
-
+ 
+ 
 The remainder of this article is organized as follows.
-Section~\ref{previous work} gives account of previous work.  Our new
-and exciting results are described in Section~\ref{results}.  Finally,
+Section~\ref{previous work} gives account of previous work. Our new
+and exciting results are described in Section~\ref{results}. Finally,
 Section~\ref{conclusions} gives the conclusions.
-
+ 
 \section{Choice of Language}
-
+ 
 A fundamental, and early, design choice is selection of implementation
-language.  Our choice is constrained by several factors, in roughly
+language. Our choice is constrained by several factors, in roughly
 descending order of priority:
-
+ 
 \begin{description}
 \item[Existing familiarity: ] We have a hard deadline on
   implementing the design, and the allotted period of time is not
-  particularly long.  Notably, we do not have a significant amount of
+  particularly long. Notably, we do not have a significant amount of
   time to invest in learning new languages, so we must all be somewhat
   familiar with the language, or at least able to swiftly pick up the
   necessary knowledge.
 \item[Availability of FUSE bindings: ] No matter the language, we will
   most likely not have time to develop (and debug) a new set of
-  bindings to FUSE.  The language we choose must thus have an existing
+  bindings to FUSE. The language we choose must thus have an existing
   (mature) binding.
 \item[Development efficiency: ] As mentioned above, we do not have a
   lot of time to write the code, so the language choice should be
   optimised for developer productivity over such things as final
   program performance.
 \item[Implementation portability: ] According to the assignment,
-  portability to OS X and GNU/Linux is a goal.  Hence, our chosen
+  portability to OS X and GNU/Linux is a goal. Hence, our chosen
   language must have somewhat mature implementations on both of these
   systems.
 \item[Safety: ] A filesystem is a central and important construction,
-  and it is important that it is reliable and correct.  We will likely
+  and it is important that it is reliable and correct. We will likely
   not have time to do heavy testing of our work, and it is therefore
   desirable that our chosen language provides as many static
   guarantees of correctness as possible.
 \end{description}
-
-Based on these parameters, we have chosen Python.  We are all somewhat
+ 
+Based on these parameters, we have chosen Python. We are all somewhat
 familiar with the language, and we have faith in the maturity of its
 FUSE bindings due to the explicit recommendation of Python by the
-course lecturers.  Python is also generally acknowledged as a
+course lecturers. Python is also generally acknowledged as a
 productive language, and the reference implementation (CPython) is
-ported to all relevant platforms.  Python does suffer a bit in the
+ported to all relevant platforms. Python does suffer a bit in the
 area of static safety guarantees, though arguably less so than C
 (another obvious possibility), but significantly more than languages
 such as Haskell or OCaml.
-
+ 
 We assume that the possibility of using the Bourne shell scripting
 language is a somewhat morbid joke.
+ 
+\section{Choice of version control system}
+The file system we are supposed to end up with should only support a single user. 
+The primary goal is to allow the user to go back to an earlier version of any file. It's not suggested that the user should have several different versions of the same file.
 
-\section{Previous work}\label{previous work}
-A much longer \LaTeXe{} example was written by Gil~\cite{Gil:02}.
+By using these specifications we have to decide whether to implement our own version control or use an existing such as Subversion or Git.
 
-\section{Results}\label{results}
-In this section we describe the results.
+Using an already existing version control system we not have to implement any actual data-compression or logic for handling revisions. Instead we would have to create an interface for the chosen version control system. This seems to be the easier choice, but we think the version control systems that exists are too complex for the simple needs of this file system. Implementing our own system has the advantage of not adding more complexity than needed. 
 
-\section{Conclusions}\label{conclusions}
-We worked hard, and achieved very little.
+Branches aren't needed as the user is not supposed to have multiple versions of the same file active. Therefore merges aren't needed. There is no need for collaboration either. All in all git and subversion, which are the two version control systems we considered, are too complex, so we decided to implement our own simple system.
+ 
+\section{Feeing up diskspace}
+
+To be able to go back to old versions of files we would have to keep all the old data stored somewhere. After some time most of the disk space would be filled with old versions of files. This can be postponed by only recording changes to files, but it would still happen. Some mechanism to clean out old, unused versions of files must therefore be implemented.
+
+We have decided that implementing a cleaner-process as discussed in [Santry99] would be the right solution. As the assignment states that the filesystem should only be used in the Documents directory, we assume that all the files are actually user-created files. We also assume that all files in the directory are equally important to keep old revisions of. This allows us to use a simpler policiy than described in the article. Instead of having different policies for different groups of files we are able to have a global policy for the entire file system.
+
+\subsection{File retention policies}
+We have decided to use a policy that use a mixture of two different policies, based on time of the revision. If a revision is less than one month old the Keep All-policy is used. This saves all changes to the file, which takes up the most space. When a revision is older than one month the policy changes to Keep Landmarks, which means that revisions close to each other, timewise are deleted except the newest. This is useful as the older revisions get the less likely the user is to know the difference between two adjacent revisions, and the eldest revision is the most likely to be unneeded.
+The one-month limit and the decision about when two files are close to eachother should be changeable by the user, as the need for cleanup is based on several things such as disksize, importance of files etc.
+
+\subsection{File-locking}
+This process has to be able run concurrently with the file system being in use. The worst case scenario being that a user is trying to retrieve a version of a file while the cleaner-process deletes it. To avoid this the file system and the cleaner-process has to have a way to tell each other when a file is in use. We have decided to implement this using the rename system call, as it is promised to be atomic. In the version-folder for a given file a .unlocked-file is located. Whenever either the cleaner-process or the file system want to use the file, they have to rename .unlock to .lock. This guarantees that if the rename-call is successful, it is the only process accessing the file at a given time. If the other process tries to access the same file it will have to wait until the file is renamed back to unlock again.
+
+\subsection{Locating files to check}
+As the number of files grow a way to identify files likely to be ready for cleanup is needed. When there is only a small amount of files the cleaner-process can just check all of them at each iteration, but as soon as the number of files grow it becomes unfeasible. A way to identify files that are likely to have revisions that can be deleted is therefore needed.
+
+To avoid having to scan the file system for files a list of all the files on the system should be kept in memory. Together with each entry in the list a date is kept that signify when the cleaner-process should analyze the file again. This is a simpler implementation of the way it is done in the Elephant file system [Santry99]. When the cleaner-process has analyzed the file a new date is created according to the findings. The exact intervals at whcih files should be analyzed has to be worked out during testing.
+
+
+
 
 \bibliographystyle{abbrv}
-\bibliography{main}
-
+\bibliography{design}
+ 
 \end{document}
+ 
