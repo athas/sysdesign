@@ -22,19 +22,16 @@ Section~\ref{conclusions} gives the conclusions.
  
 \section{Choice of Language}
  
-A fundamental, and early, design choice is selection of implementation
-language. Our choice is constrained by several factors, in roughly
+A fundamental, and early, design choice is selection of implementationlanguage. Our choice is constrained by several factors, in roughly
 descending order of priority:
  
 \begin{description}
 \item[Existing familiarity: ] We have a hard deadline on
   implementing the design, and the allotted period of time is not
   particularly long. Notably, we do not have a significant amount of
-  time to invest in learning new languages, so we must all be somewhat
-  familiar with the language, or at least able to swiftly pick up the
+time to invest in learning new languages, so we must all be somewhat  familiar with the language, or at least able to swiftly pick up the
   necessary knowledge.
-\item[Availability of FUSE bindings: ] No matter the language, we will
-  most likely not have time to develop (and debug) a new set of
+\item[Availability of FUSE bindings: ] No matter the language, we will  most likely not have time to develop (and debug) a new set of
   bindings to FUSE. The language we choose must thus have an existing
   (mature) binding.
 \item[Development efficiency: ] As mentioned above, we do not have a
@@ -66,34 +63,126 @@ We assume that the possibility of using the Bourne shell scripting
 language is a somewhat morbid joke.
  
 \section{Choice of version control system}
-The file system we are supposed to end up with should only support a single user. 
-The primary goal is to allow the user to go back to an earlier version of any file. It's not suggested that the user should have several different versions of the same file.
+The file system we are supposed to end up with should only support a
+single user.
+The primary goal is to allow the user to go back to an earlier version
+of any file. It's not suggested that the user should have several
+different versions of the same file.
 
-By using these specifications we have to decide whether to implement our own version control or use an existing such as Subversion or Git.
+By using these specifications we have to decide whether to implement
+our own version control or use an existing such as Subversion or Git.
 
-Using an already existing version control system we not have to implement any actual data-compression or logic for handling revisions. Instead we would have to create an interface for the chosen version control system. This seems to be the easier choice, but we think the version control systems that exists are too complex for the simple needs of this file system. Implementing our own system has the advantage of not adding more complexity than needed. 
+Using an already existing version control system we not have to
+implement any actual data-compression or logic for handling revisions.
+Instead we would have to create an interface for the chosen version
+control system. This seems to be the easier choice, but we think the
+version control systems that exist are too complex for the simple
+needs of this file system. Implementing our own system has the
+advantage of not adding more complexity than needed.
 
-Branches aren't needed as the user is not supposed to have multiple versions of the same file active. Therefore merges aren't needed. There is no need for collaboration either. All in all git and subversion, which are the two version control systems we considered, are too complex, so we decided to implement our own simple system.
+Branches aren't needed as the user is not supposed to have multiple
+versions of the same file active. Therefore merges aren't needed.
+There is no need for collaboration either. All in all git and
+subversion, which are the two version control systems we considered,
+are too complex, so we decided to implement our own simple system.
  
-\section{Feeing up diskspace}
+\section{Feeing up disk space}
 
-To be able to go back to old versions of files we would have to keep all the old data stored somewhere. After some time most of the disk space would be filled with old versions of files. This can be postponed by only recording changes to files, but it would still happen. Some mechanism to clean out old, unused versions of files must therefore be implemented.
+To be able to go back to old versions of files we would have to keep
+all the old data stored somewhere. After some time most of the disk
+space would be filled with old versions of files. This can be
+postponed by only recording changes to files, but it would still
+happen. Some mechanism to clean out old, unused versions of files must
+therefore be implemented.
 
-We have decided that implementing a cleaner-process as discussed in [Santry99] would be the right solution. As the assignment states that the filesystem should only be used in the Documents directory, we assume that all the files are actually user-created files. We also assume that all files in the directory are equally important to keep old revisions of. This allows us to use a simpler policiy than described in the article. Instead of having different policies for different groups of files we are able to have a global policy for the entire file system.
+We have decided that implementing a cleaner-process as discussed in
+[Santry99] would be the right solution. As the assignment states that
+the file system should only be used in the Documents directory, we
+assume that all the files are actually user-created files. We also
+assume that all files in the directory are equally important to keep
+old revisions of. This allows us to use a simpler policy than
+described in the article. Instead of having different policies for
+different groups of files we are able to have a global policy for the
+entire file system.
 
 \subsection{File retention policies}
-We have decided to use a policy that use a mixture of two different policies, based on time of the revision. If a revision is less than one month old the Keep All-policy is used. This saves all changes to the file, which takes up the most space. When a revision is older than one month the policy changes to Keep Landmarks, which means that revisions close to each other, timewise are deleted except the newest. This is useful as the older revisions get the less likely the user is to know the difference between two adjacent revisions, and the eldest revision is the most likely to be unneeded.
-The one-month limit and the decision about when two files are close to eachother should be changeable by the user, as the need for cleanup is based on several things such as disksize, importance of files etc.
+We have decided to use a policy that use a mixture of two different
+policies, based on time of the revision. If a revision is less than
+one month old the Keep All-policy is used. This saves all changes to
+the file, which takes up the most space. When a revision is older than
+one month the policy changes to Keep Landmarks, which means that
+revisions close to each other, time wise are deleted except the
+newest. This is useful as the older revisions get the less likely the
+user is to know the difference between two adjacent revisions, and the
+eldest revision is the most likely to be unneeded.
+The one-month limit and the decision about when two files are close to
+each other should be changeable by the user, as the need for cleanup
+is based on several things such as disk size, importance of files etc.
 
 \subsection{File-locking}
-This process has to be able run concurrently with the file system being in use. The worst case scenario being that a user is trying to retrieve a version of a file while the cleaner-process deletes it. To avoid this the file system and the cleaner-process has to have a way to tell each other when a file is in use. We have decided to implement this using the rename system call, as it is promised to be atomic. In the version-folder for a given file a .unlocked-file is located. Whenever either the cleaner-process or the file system want to use the file, they have to rename .unlock to .lock. This guarantees that if the rename-call is successful, it is the only process accessing the file at a given time. If the other process tries to access the same file it will have to wait until the file is renamed back to unlock again.
+This process has to be able run concurrently with the file system
+being in use. The worst case scenario being that a user is trying to
+retrieve a version of a file while the cleaner-process deletes it. To
+avoid this, the file system and the cleaner-process has to have a way
+to tell each other when a file is in use. We have decided to implement
+this using the rename system call, as it is promised to be atomic. In
+the version-folder for a given file an .unlocked-file is located.
+Whenever either the cleaner-process or the file system wants to use
+the file, they have to rename .unlock to .lock. This guarantees that
+if the rename-call is successful, it is the only process accessing the
+file at a given time. If the other process tries to access the same
+file it will have to wait until the file is renamed back to unlock
+again.
 
 \subsection{Locating files to check}
-As the number of files grow a way to identify files likely to be ready for cleanup is needed. When there is only a small amount of files the cleaner-process can just check all of them at each iteration, but as soon as the number of files grow it becomes unfeasible. A way to identify files that are likely to have revisions that can be deleted is therefore needed.
+As the number of files grows a way to identify files likely to be
+ready for cleanup is needed. When there is only a small amount of
+files the cleaner-process can just check all of them at every
+iteration, but as soon as the number of files grow it becomes
+unfeasible. A way to identify files that are likely to have revisions
+that can be deleted is therefore needed.
 
-To avoid having to scan the file system for files a list of all the files on the system should be kept in memory. Together with each entry in the list a date is kept that signify when the cleaner-process should analyze the file again. This is a simpler implementation of the way it is done in the Elephant file system [Santry99]. When the cleaner-process has analyzed the file a new date is created according to the findings. The exact intervals at whcih files should be analyzed has to be worked out during testing.
+To avoid having to scan the file system for files a list of all the
+files on the system should be kept in memory. Together with each entry
+in the list a date is kept that signify when the cleaner-process
+should analyze the file again. This is a simpler implementation of the
+way it is done in the Elephant file system [Santry99]. When the
+cleaner-process has analyzed the file a new date is created according
+to the findings. The exact intervals at which files should be analyzed
+has to be worked out during testing.
 
+\section{File system interface}
 
+A somewhat small decision when designing with enormous impact for the
+user is the way that files are shown to the user.
+We have to decide on how the user sees the different versions of the
+file. A possibility is to show all available versions of all the
+files,
+which has the advantage that the user can easily see every single
+change to all files, but this quickly becomes a problem.
+As soon as there are more than a few files or versions it becomes
+impossible to get an overview of the files in a directory.
+Instead we have decided that it should be completely invisible to the
+user that the file system is actually implementing version control.
+This makes the file system usable by everybody and only if a user has
+to get an earlier revision will he have to know the specifics about
+the file system.
+We have decided to use semicolon followed by a number or * to use
+versions.
+When a ls command is issued with ;* it shows all the available
+versions of the files in the directory.
+Each version has a number attached, so when file is referred to with ;
+and a number it references that version of the file.
+Because of this we have had to enforce that files can not have a name
+with the suffix ;* or semicolon followed by a number.
+
+\section{Internal file representation}
+
+\section{Delta compression}
+
+\section{Link-handling?}
+
+\section{GUI interface?}
 
 
 \bibliographystyle{abbrv}
