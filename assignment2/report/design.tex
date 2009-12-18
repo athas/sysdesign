@@ -1,7 +1,7 @@
 \documentclass[12pt]{article}
  
 \author{
-        Troels, Troels, Kasper
+        Troels, Troels, Kasper Middelboe Petersen
 }
 \date{\today}
 
@@ -178,15 +178,18 @@ In summary, our system will work by storing version data in the form
 of normal files on a traditional file system, and using this data to
 translate FUSE operations into operations on this versioning data.
  
-\section{Feeing up disk space}
+\section{Freeing up disk space}
 
 To be able to go back to old versions of files we would have to keep
-all the old data stored somewhere. After some time most of the disk
-space would be filled with old versions of files. This can be
-postponed by only recording changes to files, but it would still
-happen. Some mechanism to clean out old, unused versions of files must
-therefore be implemented.
+all the old data stored somewhere. While diskspace is cheap and aboundant it would become a problem eventually as the diskspace would run out.
 
+\subsection{Delta compression}
+One way to slow down the problem is to store deltas as described in \cite{MacDonald:kx} instead of the entire document for every version. A delta is the the difference between an old version and the new document and the basic assumption is that the new version of a file to a large extend is the same as the old one and thus the changes would fill alot less than storing the entire file. However using such forward-deltas is less desireable for use in a version controlled file system since it would be a reasonable assumption that the newest versions of the files would be the most resently accessed ones. Instead we would want to store the most reson version as the entire file and let older versions be stored as reverse-deltas. This would mean extra computation to generate the file based on a chain of deltas only would be required for older versions.
+
+We have chosen not to implement delta compression in our prototype as it only adds an unessesary layer of comlexity and would be very easy to add at a later point with minimal changes to the design. An example of an algorithm for generating deltas between binary files is also supplied in \cite{MacDonald:kx}.
+
+\subsection{Cleaner process}
+To fix the problem all together deleting files must happen eventually.
 We have decided that implementing a cleaner-process as discussed in
 \cite{319159} would be the right solution. As the assignment states that
 the file system should only be used in the Documents directory, we
@@ -197,7 +200,7 @@ described in the article. Instead of having different policies for
 different groups of files we are able to have a global policy for the
 entire file system.
 
-\subsection{File retention policies}
+\subsubsection{File retention policies}
 We have decided to use a policy that use a mixture of two different
 policies, based on time of the revision. If a revision is less than
 one month old the Keep All-policy is used. This saves all changes to
@@ -211,7 +214,7 @@ The one-month limit and the decision about when two files are close to
 each other should be changeable by the user, as the need for cleanup
 is based on several things such as disk size, importance of files etc.
 
-\subsection{File-locking}
+\subsubsection{File-locking}
 This process has to be able run concurrently with the file system
 being in use. The worst case scenario being that a user is trying to
 retrieve a version of a file while the cleaner-process deletes it. To
@@ -226,7 +229,7 @@ file at a given time. If the other process tries to access the same
 file it will have to wait until the file is renamed back to unlock
 again.
 
-\subsection{Locating files to check}
+\subsubsection{Locating files to check}
 As the number of files grows a way to identify files likely to be
 ready for cleanup is needed. When there is only a small amount of
 files the cleaner-process can just check all of them at every
@@ -293,9 +296,9 @@ To represent the files we use the following rules:
   \texttt{<filename>;0}. This directory contains files named by numbers that
   represent the version number of the file. The higher the number the
   newer the version.
-\item If the file exist (not been deleted) a file with \texttt{<filename>} is
-  located at the same level as the directory containing the
-  versions. This file is always hard linked to the newest version
+\item If the file exist (not been deleted) a symbolic link with
+  \texttt{<filename>} is located at the same level as the directory
+  containing the versions. This file is always linked to the newest version
   located inside the files directory.
 \item If the file is deleted the above mentioned file is removed and a
   new version is created by copying the latest. Should a new file be
@@ -303,7 +306,7 @@ To represent the files we use the following rules:
   created skipping one version as the new file is created. The reason
   for this is to be able to indicate that a file deletion has happened
   at the time of the last version before the jump in versions.
-\item Renaming of a file means renaming both the hard link and the
+\item Renaming of a file means renaming both the symbolic link and the
   directory.
 \item The name of any directory in the system is given by a directory
   named \texttt{<directory>;*}. All contents of the directory, such as files
@@ -328,7 +331,13 @@ is used. It would seem to the user as either the old or the new list
 of old versions of the two files would seem to have disappeared or
 multiple/merged lists would have to be displayed.
 
-See figure \ref{structurefig}.
+An example has been supplied on figure \ref{structurefig}. The left hand
+side is the view is what the user sees using the normal commands thus
+looking only at the newest versions. The right hand side shows how the
+files and directories are stored internally. As shown several versions
+exist for most of the files in the example and further more an example of
+a deleted directory along with a deleted file is located inside the
+directory \texttt{dir}.
 
 \begin{figure}
 \begin{center}
@@ -337,8 +346,6 @@ See figure \ref{structurefig}.
 \caption{Example of logical versus physical file structure}
 \label{structurefig}
 \end{figure}
-
-\section{Delta compression}
 
 \section{Link-handling?}
 
