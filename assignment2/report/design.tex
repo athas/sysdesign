@@ -12,15 +12,6 @@
 \begin{document}
  
 \maketitle
- 
-\section{Introduction}
-This is time for all good men to come to the aid of their party!
- 
- 
-The remainder of this article is organized as follows.
-Section~\ref{previous work} gives account of previous work. Our new
-and exciting results are described in Section~\ref{results}. Finally,
-Section~\ref{conclusions} gives the conclusions.
 
 \section{Problem analysis}
 
@@ -58,15 +49,18 @@ requirement mandated by the course.  However, FUSE is not a bad
 choice: the purpose of our file system is not to store versioned data
 efficiently on a physical disk; thus we do not need direct access to
 hardware devices, and it is therefore not necessary for our file
-system to run in kernel mode.  FUSE provides an effective and simple
-way to provide a completely transparent file system interface, and
-makes it somewhat easy to use a standard native file system for the
-actual data storage.  On the downside, should the needs of our system
-evolve in the future, to the point where performance and efficient
-storage becomes of paramount concern, it may be hard to achieve such
-results outside of kernel mode.  However, as stated in the textbook,
-such a radical change in functional requirements merits an entirely
-new design and implementation, not an upgrade of an existing one.
+system to run in kernel mode.  Running a file system in user space
+drastically lowers the risk of major system crashes, as it will be as
+limited as any ordinary process\cite{EGGERT:1993mz}.  FUSE provides an
+effective and simple way to provide a completely transparent file
+system interface, and makes it somewhat easy to use a standard native
+file system for the actual data storage.  On the downside, should the
+needs of our system evolve in the future, to the point where
+performance and efficient storage becomes of paramount concern, it may
+be hard to achieve such results outside of kernel mode.  However, as
+stated in the textbook, such a radical change in functional
+requirements merits an entirely new design and implementation, not an
+upgrade of an existing one.
 
 The versioning must be completely transparent to the user, who must be
 able to work in complete ignorance of the fact that previous
@@ -151,7 +145,8 @@ have several different current versions of the same file (no
 branching).
 
 By using these specifications we have to decide whether to implement
-our own version control or use an existing such as Subversion or Git.
+our own version control or use an existing such as Subversion or
+Git\cite{Grant:2009ly}.
 
 Using an already existing version control system we not have to
 implement any actual data-compression or logic for handling revisions.
@@ -172,7 +167,9 @@ Our system (as is not unusual in FUSE) is based on the notion of a
 around a traditional, physical on-disk filesystem.  This design, and
 terminology, is presented in \cite{1096690}, which notes greatly
 improved implementation simplicity over a classic physical filesystem
-implementation, as well as a negligible performance impact.  
+implementation, as well as a negligible performance impact.  The use
+of a stacked file system is also mentioned in
+\cite{Bustamante04wayback:a}.
 
 In summary, our system will work by storing version data in the form
 of normal files on a traditional file system, and using this data to

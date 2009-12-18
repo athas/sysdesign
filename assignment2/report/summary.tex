@@ -25,6 +25,17 @@ and runs entirely on the users own machine.
 
 \section{Design requirements}
 
+\begin{description}
+\item[FUSE must be used:] this is an externally mandated requirement,
+  but still a good choice for our domain.
+\item[Versioning must be transparent,] no special commands must be
+  necessary to create revisions of files, and no deleted files may be
+  visible in directory listings (unless special recovery-precautions
+  are taken).
+\item[The revision history is read-only,] so we provide no facilities
+  for explicitly modifying the revision history.
+\end{description}
+
 \section{Design specifics}
 
 Our file system is implemented as a program that translates FUSE calls
