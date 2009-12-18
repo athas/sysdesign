@@ -1,0 +1,62 @@
+\documentclass[12pt]{article}
+ 
+\author{
+        Troels, Troels, Kasper
+}
+\date{\today}
+ 
+\title{System Design, assigment 2a:\\Summary of filesystem design}
+ 
+\begin{document}
+ 
+\maketitle
+ 
+\section{Design background}
+
+We are designing a versioning filesystem for managing the documents of
+a novice user.  Managing the revision history completely should be
+transparent to the user and his programs; the user interface for
+restoring past versions is beyond the scope of the design, but we must
+provide at least a programming interface to the version history.
+
+The most important issue is preventing data loss, not storing detailed
+logs about changes.  In addition, the system is inherently single-user
+and runs entirely on the users own machine.
+
+\section{Design requirements}
+
+\section{Design specifics}
+
+Our file system is implemented as a program that translates FUSE calls
+into operations on an underlying versioned file storage, said storage
+being implemented as a directory structure on a normal file system, as
+in \cite{1096690} and \cite{Bustamante04wayback:a}.
+
+To conserve disk space, it may be necessary to merge adjacent
+revisions, or even delete old revisions outright.  This will be done
+by a cleaning process, as in \cite{319159}, although we do not support
+configuration of the retention policy on a per-file basis, only on a
+global whole-system basis.
+
+To prevent race conditions between the cleaning process and the main
+filesystem operation, we make use of a \textit{locking file}.  Each
+files revision history has a file \texttt{.unlock} associated with it,
+and a process is required to rename this to \texttt{.lock} before
+interacting with the history in any way.  When the process is done,
+the file will be named back.  Renaming a file is an atomic operation,
+and successfully renaming the file thus guarantees that the process
+has exclusive access to the revision history.\cite{Santry:1999gf}
+
+\subsection{Implementation language}
+
+Based in particular on the recommendation from the course lecturers,
+we have decided to implement the file system driver in Python.
+Arguments in favour of this choice include the development efficiency
+of Python (important as we only have a single week to implement the
+file system), the existence of mature FUSE bindings, as well as some
+degree of Python experience among all members of the group.
+
+\bibliographystyle{abbrv}
+\bibliography{assignment1}
+ 
+\end{document}
