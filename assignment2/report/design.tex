@@ -48,6 +48,51 @@ outline the assumptions on which we have created our design.
   \texttt{Save}-button in his program, we have to make sure older
   revisions of the working document are not lost.
 \end{description}
+
+\section{Design requirements}
+
+Our implementation must make use of FUSE; this is an external
+requirement mandated by the course.  However, FUSE is not a bad
+choice: the purpose of our file system is not to store versioned data
+efficiently on a physical disk; thus we do not need direct access to
+hardware devices, and it is therefore not necessary for our file
+system to run in kernel mode.  FUSE provides an effective and simple
+way to provide a completely transparent file system interface, and
+makes it somewhat easy to use a standard native file system for the
+actual data storage.  On the downside, should the needs of our system
+evolve in the future, to the point where performance and efficient
+storage becomes of paramount concern, it may be hard to achieve such
+results outside of kernel mode.  However, as stated in the textbook,
+such a radical change in functional requirements merits an entirely
+new design and implementation, not an upgrade of an existing one.
+
+The versioning must be completely transparent to the user, who must be
+able to work in complete ignorance of the fact that previous
+iterations of his work is being safely stored.  For each file, a
+linear history of revisions will be stored.  Directories will not be
+versioned, only their contents.  Symbolic and hard links will
+\textit{not} be supported: a novice user will not make use of these
+facilities in any case, and they create enormous complexity, far
+beyond any potential utility, given our usage scenario.
+
+The goal is to create one new revision per ``save'' in the users
+application.  This follows the design principle of doing what is most
+obvious to a user.  FUSE (or most common file system interfaces, for
+that matter) does not explicitly describe such an operation.  Hence,
+some other heuristic will have to be specified to determine when to
+store a new revision of a file.
+
+Unless access is done through special mechanisms, only the
+\textit{most recent} version of a file should be visible and
+accessible.  For example, if a file has been deleted, it must not show
+up in directory listings.  This ensures compatibility with existing
+programs that interact with files (such as search programs, which
+should not find deleted files or earlier revisions).
+
+There must be some way of accessing the revision history in a purely
+\textit{read-only} manner in order to restore old revisions.  It must
+not be possible to modify the revision history through our provided
+interfaces.
  
 \section{Choice of Language}
  
