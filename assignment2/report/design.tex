@@ -90,48 +90,6 @@ There must be some way of accessing the revision history in a purely
 not be possible to modify the revision history through our provided
 interfaces.
  
-\section{Choice of Language}
- 
-A fundamental, and early, design choice is selection of implementationlanguage. Our choice is constrained by several factors, in roughly
-descending order of priority:
- 
-\begin{description}
-\item[Existing familiarity: ] We have a hard deadline on
-  implementing the design, and the allotted period of time is not
-  particularly long. Notably, we do not have a significant amount of
-time to invest in learning new languages, so we must all be somewhat  familiar with the language, or at least able to swiftly pick up the
-  necessary knowledge.
-\item[Availability of FUSE bindings: ] No matter the language, we will  most likely not have time to develop (and debug) a new set of
-  bindings to FUSE. The language we choose must thus have an existing
-  (mature) binding.
-\item[Development efficiency: ] As mentioned above, we do not have a
-  lot of time to write the code, so the language choice should be
-  optimised for developer productivity over such things as final
-  program performance.
-\item[Implementation portability: ] According to the assignment,
-  portability to OS X and GNU/Linux is a goal. Hence, our chosen
-  language must have somewhat mature implementations on both of these
-  systems.
-\item[Safety: ] A filesystem is a central and important construction,
-  and it is important that it is reliable and correct. We will likely
-  not have time to do heavy testing of our work, and it is therefore
-  desirable that our chosen language provides as many static
-  guarantees of correctness as possible.
-\end{description}
- 
-Based on these parameters, we have chosen Python. We are all somewhat
-familiar with the language, and we have faith in the maturity of its
-FUSE bindings due to the explicit recommendation of Python by the
-course lecturers. Python is also generally acknowledged as a
-productive language, and the reference implementation (CPython) is
-ported to all relevant platforms. Python does suffer a bit in the
-area of static safety guarantees, though arguably less so than C
-(another obvious possibility), but significantly more than languages
-such as Haskell or OCaml.
- 
-We assume that the possibility of using the Bourne shell scripting
-language is a somewhat morbid joke.
- 
 \section{Storage backend}
 
 Irrespective of the external interface of our file system, we have to
@@ -366,10 +324,72 @@ directory \texttt{dir}.
 \label{structurefig}
 \end{figure}
 
-\section{Link-handling?}
+\section{Choice of Language}
+ 
+A fundamental, and early, design choice is selection of implementationlanguage. Our choice is constrained by several factors, in roughly
+descending order of priority:
+ 
+\begin{description}
+\item[Existing familiarity: ] We have a hard deadline on
+  implementing the design, and the allotted period of time is not
+  particularly long. Notably, we do not have a significant amount of
+time to invest in learning new languages, so we must all be somewhat  familiar with the language, or at least able to swiftly pick up the
+  necessary knowledge.
+\item[Availability of FUSE bindings: ] No matter the language, we will  most likely not have time to develop (and debug) a new set of
+  bindings to FUSE. The language we choose must thus have an existing
+  (mature) binding.
+\item[Development efficiency: ] As mentioned above, we do not have a
+  lot of time to write the code, so the language choice should be
+  optimised for developer productivity over such things as final
+  program performance.
+\item[Implementation portability: ] According to the assignment,
+  portability to OS X and GNU/Linux is a goal. Hence, our chosen
+  language must have somewhat mature implementations on both of these
+  systems.
+\item[Safety: ] A filesystem is a central and important construction,
+  and it is important that it is reliable and correct. We will likely
+  not have time to do heavy testing of our work, and it is therefore
+  desirable that our chosen language provides as many static
+  guarantees of correctness as possible.
+\end{description}
+ 
+Based on these parameters, we have chosen Python. We are all somewhat
+familiar with the language, and we have faith in the maturity of its
+FUSE bindings due to the explicit recommendation of Python by the
+course lecturers. Python is also generally acknowledged as a
+productive language, and the reference implementation (CPython) is
+ported to all relevant platforms. Python does suffer a bit in the
+area of static safety guarantees, though arguably less so than C
+(another obvious possibility), but significantly more than languages
+such as Haskell or OCaml.
+ 
+We assume that the possibility of using the Bourne shell scripting
+language is a somewhat morbid joke.
 
-\section{GUI interface?}
 
+\section{Development strategy}
+
+Due to the relative simplicity of the project, the small size of our
+development team, the short period time within which the
+implementation will take place, and the fact that we will be in
+constant communication with each other during this period, we have
+opted for a lightweight plan that only provides a rough outline of the
+functional parts of the system.
+
+The most obvious independent functional part is the cleaning process,
+which can be implemented in isolation solely based on our
+well-specified file structure format and locking strategy.
+
+Furthermore, the various file operations can be developed separately:
+
+\begin{itemize}
+\item Saving
+\item Reading the newest revision
+\item Reading some older revision
+\item Listing the contents of a directory
+\item Renaming a file
+\item Deleting a file
+\end{itemize}
 
 \bibliographystyle{abbrv}
 \bibliography{assignment1}
