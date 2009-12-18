@@ -223,20 +223,62 @@ with the suffix ;* or semicolon followed by a number.
 
 \section{Internal file representation}
 
-Since FUSE is located in user space, we use the native file system to implement our own version control system. To meet the requirements of the file system, it only needs to store different versions of the same files. A files uniqueness is specified by its name in the name space alone – meaning any new file named the same as some old deleted file will obtain the history of the old file. The same is the case for directories which in effect means no versioning of directories is needed, only the need to be able to distinguish if a directory has been deleted or not.
+Since FUSE is located in user space, we use the native file system to
+implement our own version control system. To meet the requirements of
+the file system, it only needs to store different versions of the same
+files. A files uniqueness is specified by its name in the name space
+alone – meaning any new file named the same as some old deleted file
+will obtain the history of the old file. The same is the case for
+directories which in effect means no versioning of directories is
+needed, only the need to be able to distinguish if a directory has
+been deleted or not.
 
-We can use that we have defined our name space to not accept suffixes in the format of either ;<number> or ;* to allow direct access to versioned files trough the name space with existing tools to help represent the versioned files internally.
+We can use that we have defined our name space to not accept suffixes
+in the format of either ;<number> or ;* to allow direct access to
+versioned files trough the name space with existing tools to help
+represent the versioned files internally.
 
 To represent the files we use the following rules:
-- The name of any file in the system is given by a directory named <filename>;0. This directory contains files named by numbers that represent the version number of the file. The higher the number the newer the version.
-- If the file exist (not been deleted) a file with <filename> is located at the same level as the directory containing the versions. This file is always hard linked to the newest version located inside the files directory.
-- If the file is deleted the above mentioned file is removed and a new version is created by copying the latest. Should a new file be created with the same name a jump in version numbering will be created skipping one version as the new file is created. The reason for this is to be able to indicate that a file deletion has happened at the time of the last version before the jump in versions.
-- Renaming of a file means renaming both the hard link and the directory.
-- The name of any directory in the system is given by a directory named <directory>;*. All contents of the directory, such as files and subdirectories, is located inside this directory.
-- If the directory exist (not been deleted) a symbolic link is created named <directory> at the same level as the directory containing the contents. This symbolic link points to this directory.
-Renaming of a directory means renaming both the symbolic link and the directory containing the contents of the folder.
 
-It is worth noticing that renames happens directly on the files/directories and is irrecoverable by means of our versioned file system. An unresolved problem arise here since a rename to an already used, but deleted, file or directory would not be allowed. This is not possible to resolve using our current design, as we would require both the history to follow a file trough renames to not loose history, deleting the old files history would mean loss of history and a merge of two versions would not make much sense. This would be confusing and no good solution really exist for this problem no matter what system is used. It would seem to the user as either the old or the new list of old versions of the two files would seem to have disappeared or multiple/merged lists would have to be displayed.
+\begin{itemize}
+\item The name of any file in the system is given by a directory named
+  <filename>;0. This directory contains files named by numbers that
+  represent the version number of the file. The higher the number the
+  newer the version.
+\item If the file exist (not been deleted) a file with <filename> is
+  located at the same level as the directory containing the
+  versions. This file is always hard linked to the newest version
+  located inside the files directory.
+\item If the file is deleted the above mentioned file is removed and a
+  new version is created by copying the latest. Should a new file be
+  created with the same name a jump in version numbering will be
+  created skipping one version as the new file is created. The reason
+  for this is to be able to indicate that a file deletion has happened
+  at the time of the last version before the jump in versions.
+\item Renaming of a file means renaming both the hard link and the
+  directory.
+\item The name of any directory in the system is given by a directory
+  named <directory>;*. All contents of the directory, such as files
+  and subdirectories, is located inside this directory.
+\item If the directory exist (not been deleted) a symbolic link is
+  created named <directory> at the same level as the directory
+  containing the contents. This symbolic link points to this
+  directory.  Renaming of a directory means renaming both the symbolic
+  link and the directory containing the contents of the folder.
+\end{itemize}
+
+It is worth noticing that renames happens directly on the
+files/directories and is irrecoverable by means of our versioned file
+system. An unresolved problem arise here since a rename to an already
+used, but deleted, file or directory would not be allowed. This is not
+possible to resolve using our current design, as we would require both
+the history to follow a file trough renames to not loose history,
+deleting the old files history would mean loss of history and a merge
+of two versions would not make much sense. This would be confusing and
+no good solution really exist for this problem no matter what system
+is used. It would seem to the user as either the old or the new list
+of old versions of the two files would seem to have disappeared or
+multiple/merged lists would have to be displayed.
 
 \section{Delta compression}
 
