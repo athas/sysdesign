@@ -1,7 +1,7 @@
 \documentclass[12pt]{article}
  
 \author{
-        Troels, Troels, Kasper Middelboe Petersen
+        Troels Henriksen, Troels Visti Thrane, Kasper Middelboe Petersen
 }
 \date{\today}
 
@@ -221,7 +221,9 @@ Another possible solution would be to use the \texttt{flush} function
 calll, but this could be called several times while an application is
 working with a file. We think this would generate too many revisions
 and one of the main goals is still to keep the system as simple as 
-possible for the user.
+possible for the user.  This solution could be the preferred choice,
+but it all boils down to how applications make use of \texttt{flush}
+and \texttt{release}.
 
 \section{File system interface}
 A somewhat small decision when designing with enormous impact for the
