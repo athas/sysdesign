@@ -341,6 +341,29 @@ See figure \ref{structurefig}.
 
 \section{GUI interface?}
 
+\section{Development strategy}
+
+Due to the relative simplicity of the project, the small size of our
+development team, the short period time within which the
+implementation will take place, and the fact that we will be in
+constant communication with each other during this period, we have
+opted for a lightweight plan that only provides a rough outline of the
+functional parts of the system.
+
+The most obvious independent functional part is the cleaning process,
+which can be implemented in isolation solely based on our
+well-specified file structure format and locking strategy.
+
+Furthermore, the various file operations can be developed separately:
+
+\begin{itemize}
+\item Saving
+\item Reading the newest revision
+\item Reading some older revision
+\item Listing the contents of a directory
+\item Renaming a file
+\item Deleting a file
+\end{itemize}
 
 \bibliographystyle{abbrv}
 \bibliography{assignment1}
