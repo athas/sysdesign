@@ -91,12 +91,17 @@ such as Haskell or OCaml.
 We assume that the possibility of using the Bourne shell scripting
 language is a somewhat morbid joke.
  
-\section{Choice of version control system}
+\section{Storage backend}
+
+Irrespective of the external interface of our file system, we have to
+design a backend that can store earlier (and current) versions of
+files.
+
 The file system we are supposed to end up with should only support a
-single user.
-The primary goal is to allow the user to go back to an earlier version
-of any file. It's not suggested that the user should have several
-different versions of the same file.
+single user.  The primary goal is to allow the user to go back to an
+earlier version of any file. It's not suggested that the user should
+have several different current versions of the same file (no
+branching).
 
 By using these specifications we have to decide whether to implement
 our own version control or use an existing such as Subversion or Git.
@@ -111,9 +116,20 @@ advantage of not adding more complexity than needed.
 
 Branches aren't needed as the user is not supposed to have multiple
 versions of the same file active. Therefore merges aren't needed.
-There is no need for collaboration either. All in all git and
-subversion, which are the two version control systems we considered,
+There is no need for collaboration either. All in all Git and
+Subversion, which are the two version control systems we considered,
 are too complex, so we decided to implement our own simple system.
+
+Our system (as is not unusual in FUSE) is based on the notion of a
+\textit{stacked} file system, which functions as a layer, or wrapper,
+around a traditional, physical on-disk filesystem.  This design, and
+terminology, is presented in \cite{1096690}, which notes greatly
+improved implementation simplicity over a classic physical filesystem
+implementation, as well as a negligible performance impact.  
+
+In summary, our system will work by storing version data in the form
+of normal files on a traditional file system, and using this data to
+translate FUSE operations into operations on this versioning data.
  
 \section{Feeing up disk space}
 
