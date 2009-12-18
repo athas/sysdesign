@@ -197,7 +197,6 @@ according to the findings. The exact intervals at which files should
 be analyzed has to be worked out during testing.
 
 \section{File system interface}
-
 A somewhat small decision when designing with enormous impact for the
 user is the way that files are shown to the user.
 We have to decide on how the user sees the different versions of the
@@ -212,17 +211,19 @@ user that the file system is actually implementing version control.
 This makes the file system usable by everybody and only if a user has
 to get an earlier revision will he have to know the specifics about
 the file system.
-We have decided to use semicolon followed by a number or * to use
-versions.
-When a ls command is issued with ;* it shows all the available
-versions of the files in the directory.
-Each version has a number attached, so when file is referred to with ;
-and a number it references that version of the file.
-Because of this we have had to enforce that files can not have a name
-with the suffix ;* or semicolon followed by a number.
+
+We have decided to expand the normal file system namespace to allow
+the use of \texttt{<filename>;<version number>} to access older versions
+of a file or \texttt{<directory>;*} to list all versions of the files
+located in the directory. If the semicolon is omitted it assumes you
+only wish to work with the most resent version.
+
+Implementing access to the older versions trough the namespace also
+have the huge advantage of allowing all existing programs that already
+use the standard file system API to access the files directly without
+the need of other tools.
 
 \section{Internal file representation}
-
 Since FUSE is located in user space, we use the native file system to
 implement our own version control system. To meet the requirements of
 the file system, it only needs to store different versions of the same
