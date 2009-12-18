@@ -49,14 +49,9 @@ by a cleaning process, as in \cite{319159}, although we do not support
 configuration of the retention policy on a per-file basis, only on a
 global whole-system basis.
 
-To prevent race conditions between the cleaning process and the main
-filesystem operation, we make use of a \textit{locking file}.  Each
-files revision history has a file \texttt{.unlock} associated with it,
-and a process is required to rename this to \texttt{.lock} before
-interacting with the history in any way.  When the process is done,
-the file will be named back.  Renaming a file is an atomic operation,
-and successfully renaming the file thus guarantees that the process
-has exclusive access to the revision history.\cite{Santry:1999gf}
+Our locking-strategy (to prevent race-conditions) is based on file
+renaming, which is an atomic operation.  The same strategy is followed
+in.\cite{Santry:1999gf}
 
 \subsection{Implementation language}
 
@@ -66,6 +61,21 @@ Arguments in favour of this choice include the development efficiency
 of Python (important as we only have a single week to implement the
 file system), the existence of mature FUSE bindings, as well as some
 degree of Python experience among all members of the group.
+
+\section{Development strategy}
+
+Our development strategy is based on dividing the system into the
+following functional units:
+
+\begin{itemize}
+\item Revision cleaner
+\item Saving
+\item Reading the newest revision
+\item Reading some older revision
+\item Listing the contents of a directory
+\item Renaming a file
+\item Deleting a file
+\end{itemize}
 
 \bibliographystyle{abbrv}
 \bibliography{assignment1}
