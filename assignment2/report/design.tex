@@ -19,6 +19,35 @@ The remainder of this article is organized as follows.
 Section~\ref{previous work} gives account of previous work. Our new
 and exciting results are described in Section~\ref{results}. Finally,
 Section~\ref{conclusions} gives the conclusions.
+
+\section{Problem analysis}
+
+Our design constraints are heavily influenced by the very specific use
+case outlined in the problem assignment.  For clarity, we shall
+outline the assumptions on which we have created our design.
+
+\begin{description}
+\item[Malcolm is a novice user,] and he will likely not understand
+  complex versioning operations like branching or tagging.
+  Additionally, he is the only one using the system: there is no need
+  for a notion of multi-user support, or synchronisation against a
+  remote/central repository.
+\item[The versioning system is for documents,] not arbitrary files
+  managed by the operating system (such as logs, for example).  This
+  also implies that performance is not a chief concern.
+\item[The central purpose is preventing data loss,] so it is more
+  important to ensure that older versions can be restored than to
+  provide advanced facilities for inspecting the history of a file.
+  The ability to inspect a log of changes to a file is only important
+  insofar as it helps the user find the last revision containing his
+  missing data.
+\item[Portability is somewhat of a concern,] as the assignment
+  mandates we use FUSE, ostensibly for reasons of portability.
+\item[The system has to be transparent,] and we cannot ask Malcolm to
+  alter his usual work routine in any way.  When he clicks the
+  \texttt{Save}-button in his program, we have to make sure older
+  revisions of the working document are not lost.
+\end{description}
  
 \section{Choice of Language}
  
