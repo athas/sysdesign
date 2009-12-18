@@ -234,7 +234,7 @@ needed, only the need to be able to distinguish if a directory has
 been deleted or not.
 
 We can use that we have defined our name space to not accept suffixes
-in the format of either ;<number> or ;* to allow direct access to
+in the format of either \texttt{;<number>} or \texttt{;*} to allow direct access to
 versioned files trough the name space with existing tools to help
 represent the versioned files internally.
 
@@ -242,10 +242,10 @@ To represent the files we use the following rules:
 
 \begin{itemize}
 \item The name of any file in the system is given by a directory named
-  <filename>;0. This directory contains files named by numbers that
+  \texttt{<filename>;0}. This directory contains files named by numbers that
   represent the version number of the file. The higher the number the
   newer the version.
-\item If the file exist (not been deleted) a file with <filename> is
+\item If the file exist (not been deleted) a file with \texttt{<filename>} is
   located at the same level as the directory containing the
   versions. This file is always hard linked to the newest version
   located inside the files directory.
@@ -258,10 +258,10 @@ To represent the files we use the following rules:
 \item Renaming of a file means renaming both the hard link and the
   directory.
 \item The name of any directory in the system is given by a directory
-  named <directory>;*. All contents of the directory, such as files
+  named \texttt{<directory>;*}. All contents of the directory, such as files
   and subdirectories, is located inside this directory.
 \item If the directory exist (not been deleted) a symbolic link is
-  created named <directory> at the same level as the directory
+  created named \texttt{<directory>} at the same level as the directory
   containing the contents. This symbolic link points to this
   directory.  Renaming of a directory means renaming both the symbolic
   link and the directory containing the contents of the folder.
