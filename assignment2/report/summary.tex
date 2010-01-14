@@ -1,7 +1,7 @@
 \documentclass[12pt]{article}
  
 \author{
-        Troels, Troels, Kasper
+        Troels Henriksen, Troels Visti Thrane, Kasper Middelboe Petersen
 }
 \date{\today}
  
@@ -42,6 +42,10 @@ Our file system is implemented as a program that translates FUSE calls
 into operations on an underlying versioned file storage, said storage
 being implemented as a directory structure on a normal file system, as
 in \cite{1096690} and \cite{Bustamante04wayback:a}.
+
+Access to older versions is done making modifications to the normal file 
+namespace by adding an optional \texttt{;<version number>} suffix to files
+and listing directory contents by adding \texttt{;*} suffix to directories.
 
 To conserve disk space, it may be necessary to merge adjacent
 revisions, or even delete old revisions outright.  This will be done

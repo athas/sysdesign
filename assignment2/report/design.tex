@@ -1,7 +1,7 @@
 \documentclass[12pt]{article}
  
 \author{
-        Troels, Troels, Kasper Middelboe Petersen
+        Troels Henriksen, Troels Visti Thrane, Kasper Middelboe Petersen
 }
 \date{\today}
 
@@ -200,6 +200,30 @@ way it is done in the Elephant file system \cite{Santry:1999gf}. When
 the cleaner-process has analyzed the file a new date is created
 according to the findings. The exact intervals at which files should
 be analyzed has to be worked out during testing.
+
+\section{Deciding when to add new revisions}
+The file system also have to have a way to know when a new revision is
+needed. The simplest solution is to create a new revision at every 
+write. This however has the downside that when a user is working with
+a file a lot of writes to the file may occur. Some applications write 
+data to files at intervals, for instance time-based or after a certain 
+amount of data has been altered, and if we were to create a new 
+revision at every write we would quickly have an overwhelming amount 
+of revisions.
+
+Instead we decided that the best way would be to create a new revision
+when the \texttt{release} function is called. This function is only
+called when all open handles to the file has been closed. This means
+that a new revision is created when all applications that have been
+using the file are done.
+
+Another possible solution would be to use the \texttt{flush} function
+calll, but this could be called several times while an application is
+working with a file. We think this would generate too many revisions
+and one of the main goals is still to keep the system as simple as 
+possible for the user.  This solution could be the preferred choice,
+but it all boils down to how applications make use of \texttt{flush}
+and \texttt{release}.
 
 \section{File system interface}
 A somewhat small decision when designing with enormous impact for the
