@@ -1,14 +1,15 @@
 #!/usr/bin/python
 
-from fuse import Fuse
+from fuse import *
 import fuse
 from time import time
 
 import stat    # for file properties
 import os      # for filesystem modes (O_RDONLY, etc)
+from os import *
+import re
 import errno   # for error number codes (ENOENT, etc)
                # - note: these must be returned as negatives
-
 
 def dirFromList(list):
     """
@@ -31,7 +32,7 @@ def getParts(path):
     Return the slash-separated parts of a given path as a list
     """
     if path == '/':
-        return [['/']]
+        return ['/']
     else:
         return path.split('/')
 
@@ -44,36 +45,42 @@ class Mnemosyne(Fuse):
         self.root = '/'
         print 'Init complete.'
 
+    def convert_path (self, path):
+        """
+        Convert a path specified by the user into a path to the actual file path.
+        """
+        parts = getParts (path)
+        res = self.root
+        for p in parts[1:]:
+            m = re.match('(.*);([0-9]+|\*)$', p)
+            if m:
+                if m.group(2) == '*':
+                    if m.group(1) != '':
+                        res = res + '/' + m.group(1) + ';*';
+                else:
+                    res = res + '/' + m.group(1) + ';0' + '/' + m.group(2);
+            else:
+                res = os.path.join(self.root, readlink(res+'/'+p))
+        return res
+
     def getattr(self, path):
-        """
-        - st_mode (protection bits)
-        - st_ino (inode number)
-        - st_dev (device)
-        - st_nlink (number of hard links)
-        - st_uid (user ID of owner)
-        - st_gid (group ID of owner)
-        - st_size (size of file, in bytes)
-        - st_atime (time of most recent access)
-        - st_mtime (time of most recent content modification)
-        - st_ctime (platform dependent; time of most recent metadata change on Unix,
-                    or the time of creation on Windows).
-        """
-
         print '*** getattr', path
+        return lstat (self.convert_path (path))
 
-        depth = getDepth(path) # depth of path, zero-based from root
-        pathparts = getParts(path) # the actual parts of the path
-        return -errno.ENOSYS
+    def opendir(self, path):
+        print '*** opendir', path
+        return 0
 
+    def readdir(self, path, info):
+        print '*** readdir', path
+        versions = re.match('.*;([0-9]+|\*)$', path)
+        return [Direntry (f) for f in listdir (self.convert_path (path))
+                if (versions and bool(re.match('.*;([0-9]+|\*)$', f)))
+                or (not (versions or bool(re.match('.*;([0-9]+|\*)$', f))))]
 
     def getdir(self, path):
-        """
-        return: [[('file1', 0), ('file2', 0), ... ]]
-        """
-
         print '*** getdir', path
-        return [[('fil', 0)]]
-        return -errno.ENOSYS
+        return self.readdir (path)
 
     def mythread ( self ):
         print '*** mythread'
@@ -105,11 +112,16 @@ class Mnemosyne(Fuse):
 
     def open ( self, path, flags ):
         print '*** open', path, flags
-        return -errno.ENOSYS
+        return None
 
     def read ( self, path, length, offset ):
         print '*** read', path, length, offset
-        return -errno.ENOSYS
+        fd = open(self.convert_path (path), O_RDONLY)
+        try:
+            lseek(fd, offset, SEEK_SET)
+            return read(fd, length)
+        finally:
+            close (fd)
 
     def readlink ( self, path ):
         print '*** readlink', path
@@ -117,7 +129,7 @@ class Mnemosyne(Fuse):
 
     def release ( self, path, flags ):
         print '*** release', path, flags
-        return -errno.ENOSYS
+        return None
 
     def rename ( self, oldPath, newPath ):
         print '*** rename', oldPath, newPath
