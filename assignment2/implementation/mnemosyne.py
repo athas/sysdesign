@@ -41,7 +41,7 @@ class Mnemosyne(Fuse):
 
     def __init__(self, *args, **kw):
         Fuse.__init__(self, *args, **kw)
-
+        self.root = '/'
         print 'Init complete.'
 
     def getattr(self, path):
@@ -63,7 +63,6 @@ class Mnemosyne(Fuse):
 
         depth = getDepth(path) # depth of path, zero-based from root
         pathparts = getParts(path) # the actual parts of the path
-
         return -errno.ENOSYS
 
 
@@ -73,6 +72,7 @@ class Mnemosyne(Fuse):
         """
 
         print '*** getdir', path
+        return [[('fil', 0)]]
         return -errno.ENOSYS
 
     def mythread ( self ):
@@ -154,7 +154,9 @@ class Mnemosyne(Fuse):
 if __name__ == "__main__":
     fuse.fuse_python_api = (0,2)
     fs = Mnemosyne()
+    fs.parser.add_option(mountopt="root", metavar="PATH", default='/',
+                         help="directory for physical storage [default: %default]")
     fs.flags = 0
     fs.multithreaded = 0
-    fs.parse()
+    fs.parse(values=fs)
     fs.main()
