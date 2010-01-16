@@ -36,6 +36,18 @@ def getParts(path):
     else:
         return path.split('/')
 
+def getName(path):
+    """
+    Returns the last part of a path
+    """
+    print "path:",path
+    m = re.match('(.*/)([^/]+)',path);
+    if m:
+        return (m.group(1), m.group(2))
+    else:
+        return ('/','')
+
+
 class Mnemosyne(Fuse):
 
     def __init__(self, *args, **kw):
@@ -62,15 +74,12 @@ class Mnemosyne(Fuse):
         
         return res
 
-    def symlink_path (self, path):
-        """
-        Same as convert_path, but does not convert the last filename or directory.
-        """
-        m = re.match('(.*)/([^/]+/?)',path)
-        if m:
-            return self.convert_path(m.group(1))+m.group(2)
+    def real_path (self, path):
+        if self.root[-1] == '/':
+            res = self.root[0:-1]
         else:
-            return path
+            res = self.root
+        return res + path
 
     def getattr(self, path):
         print '*** getattr', path
@@ -124,8 +133,12 @@ class Mnemosyne(Fuse):
 
     def mkdir ( self, path, mode ):
         print '*** mkdir', path, oct(mode)
-        print 'HELLO: ', self.convert_path(path)
-        return -errno.ENOSYS
+        (p,n) = getName(path)
+        d = self.real_path(p)+n+';*'
+        if not os.path.exists(d):
+            os.mkdir(d, mode)
+        print 'source:',n+';*','name:',self.real_path(path)
+        return os.symlink(n+';*',self.real_path(path))
 
     def mknod ( self, path, mode, dev ):
         print '*** mknod', path, oct(mode), dev
@@ -163,7 +176,7 @@ class Mnemosyne(Fuse):
 
     def rmdir ( self, path ):
         print '*** rmdir', path
-        return os.unlink(self.symlink_path(path))
+        return os.unlink(self.real_path(path))
 
     def statfs ( self ):
         print '*** statfs'
