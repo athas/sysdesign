@@ -58,7 +58,7 @@ class Mnemosyne(Fuse):
                 else:
                     res = res + '/' + m.group(1) + ';0' + '/' + m.group(2);
             else:
-                res = os.path.join(self.root, readlink(res+'/'+p))
+                res = os.path.join(res, readlink(res+'/'+p))
         
         return res
 
@@ -82,10 +82,21 @@ class Mnemosyne(Fuse):
 
     def readdir(self, path, info):
         print '*** readdir', path
-        versions = re.match('.*;([0-9]+|\*)$', path)
-        return [Direntry (f) for f in listdir (self.convert_path (path))
-                if (versions and bool(re.match('.*;([0-9]+|\*)$', f)))
-                or (not (versions or bool(re.match('.*;([0-9]+|\*)$', f))))]
+        if re.match('.*;([0-9]+|\*)$', path):
+            res = []
+            p = self.convert_path (path)
+            for f in listdir (self.convert_path (path)):
+                m = re.match('(.*);(0|\*)$', f)
+                if m:
+                    if m.group(2) == '*':
+                        res.append(Direntry (m.group(1)))
+                    elif m.group(2) == '0':
+                        for r in listdir(p + '/' + f):
+                            res.append(Direntry (m.group(1) + ';' + r))
+            return res
+        else:
+            return [Direntry (f) for f in listdir (self.convert_path (path))
+                    if not re.match('.*;(0|\*)$', f)]
 
     def getdir(self, path):
         print '*** getdir', path
