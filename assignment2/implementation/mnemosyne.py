@@ -81,6 +81,44 @@ class Mnemosyne(Fuse):
             res = self.root
         return res + path
 
+    def add_version(self, path, mode=-1, dev=-1):
+        # intialize version step counter
+        i = 1
+        
+        (p,n) = getName(path)
+        # check if dir with file versions exist
+        d = self.real_path(p)+n+';0'
+        if not os.path.exists(d):
+            # it didnt, create it
+            os.mkdir(d)
+        else:
+            # check if symlink to newest version exists
+            if os.path.exists(self.real_path(path)):
+                # remove it
+                os.unlink(self.real_path(path))
+            else:
+                # it didnt so this would recreate a deleted file, set i to skip a version
+                i = 2
+        
+        # find the next version number, mode number and device number
+        v = 0
+        stat = False
+        for file in listdir(d):
+            try:
+                if int(file) >= v:
+                    v = int(file)+i
+                if stat == False:
+                    stat = os.stat(d+'/'+file)
+                    mode = stat.st_mode
+                    dev = stat.st_dev
+            except ValueError:
+                pass
+        # create the new version
+        os.mknod(d+'/'+str(v), mode, dev)
+
+        # make the new symlink
+        return os.symlink(n+';0/'+str(v),self.real_path(path))
+
     def getattr(self, path):
         print '*** getattr', path
         return lstat (self.convert_path (path))
@@ -137,12 +175,11 @@ class Mnemosyne(Fuse):
         d = self.real_path(p)+n+';*'
         if not os.path.exists(d):
             os.mkdir(d, mode)
-        print 'source:',n+';*','name:',self.real_path(path)
         return os.symlink(n+';*',self.real_path(path))
 
     def mknod ( self, path, mode, dev ):
         print '*** mknod', path, oct(mode), dev
-        return -errno.ENOSYS
+        return self.add_version(path, mode, dev)
 
     def open ( self, path, flags ):
         print '*** open', path, flags
@@ -192,11 +229,11 @@ class Mnemosyne(Fuse):
 
     def unlink ( self, path ):
         print '*** unlink', path
-        return -errno.ENOSYS
+        return os.unlink(self.real_path(path))
 
     def utime ( self, path, times ):
         print '*** utime', path, times
-        return -errno.ENOSYS
+        return os.utime(self.real_path(path), times)
 
     def write ( self, path, buf, offset ):
         print '*** write', path, buf, offset
