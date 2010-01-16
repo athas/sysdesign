@@ -37,8 +37,6 @@ def getParts(path):
         return path.split('/')
 
 class Mnemosyne(Fuse):
-    """
-    """
 
     def __init__(self, *args, **kw):
         Fuse.__init__(self, *args, **kw)
@@ -61,7 +59,18 @@ class Mnemosyne(Fuse):
                     res = res + '/' + m.group(1) + ';0' + '/' + m.group(2);
             else:
                 res = os.path.join(self.root, readlink(res+'/'+p))
+        
         return res
+
+    def symlink_path (self, path):
+        """
+        Same as convert_path, but does not convert the last filename or directory.
+        """
+        m = re.match('(.*)/([^/]+/?)',path)
+        if m:
+            return self.convert_path(m.group(1))+m.group(2)
+        else:
+            return path
 
     def getattr(self, path):
         print '*** getattr', path
@@ -104,6 +113,7 @@ class Mnemosyne(Fuse):
 
     def mkdir ( self, path, mode ):
         print '*** mkdir', path, oct(mode)
+        print 'HELLO: ', self.convert_path(path)
         return -errno.ENOSYS
 
     def mknod ( self, path, mode, dev ):
@@ -132,12 +142,17 @@ class Mnemosyne(Fuse):
         return None
 
     def rename ( self, oldPath, newPath ):
+        """
+        check if newPath;0 / newPath;* exist (depending on it being a file or adir)
+        yes, errno.EEXIST (??) custom error would be nice here
+        no, do rename on both symlink and containing folder
+        """
         print '*** rename', oldPath, newPath
         return -errno.ENOSYS
 
     def rmdir ( self, path ):
         print '*** rmdir', path
-        return -errno.ENOSYS
+        return os.unlink(self.symlink_path(path))
 
     def statfs ( self ):
         print '*** statfs'
