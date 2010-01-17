@@ -36,9 +36,19 @@ def getParts(path):
     else:
         return path.split('/')
 
+def getName(path):
+    """
+    Returns the last part of a path
+    """
+    print "path:",path
+    m = re.match('(.*/)([^/]+)',path);
+    if m:
+        return (m.group(1), m.group(2))
+    else:
+        return ('/','')
+
+
 class Mnemosyne(Fuse):
-    """
-    """
 
     def __init__(self, *args, **kw):
         Fuse.__init__(self, *args, **kw)
@@ -60,8 +70,54 @@ class Mnemosyne(Fuse):
                 else:
                     res = res + '/' + m.group(1) + ';0' + '/' + m.group(2);
             else:
-                res = os.path.join(self.root, readlink(res+'/'+p))
+                res = os.path.join(res, readlink(res+'/'+p))
+        
         return res
+
+    def real_path (self, path):
+        if self.root[-1] == '/':
+            res = self.root[0:-1]
+        else:
+            res = self.root
+        return res + path
+
+    def add_version(self, path, mode=-1, dev=-1):
+        # intialize version step counter
+        i = 1
+        
+        (p,n) = getName(path)
+        # check if dir with file versions exist
+        d = self.real_path(p)+n+';0'
+        if not os.path.exists(d):
+            # it didnt, create it
+            os.mkdir(d)
+        else:
+            # check if symlink to newest version exists
+            if os.path.exists(self.real_path(path)):
+                # remove it
+                os.unlink(self.real_path(path))
+            else:
+                # it didnt so this would recreate a deleted file, set i to skip a version
+                i = 2
+        
+        # find the next version number, mode number and device number
+        v = 0
+        stat = False
+        for file in listdir(d):
+            try:
+                if int(file) >= v:
+                    v = int(file)+i
+                if stat == False:
+                    stat = os.stat(d+'/'+file)
+                    mode = stat.st_mode
+                    dev = stat.st_dev
+            except ValueError:
+                pass
+        # create the new version
+        os.mknod(d+'/'+str(v), mode, dev)
+
+        # make the new symlink
+        return os.symlink(n+';0/'+str(v),self.real_path(path))
 
     def getattr(self, path):
         print '*** getattr', path
@@ -73,10 +129,21 @@ class Mnemosyne(Fuse):
 
     def readdir(self, path, info):
         print '*** readdir', path
-        versions = re.match('.*;([0-9]+|\*)$', path)
-        return [Direntry (f) for f in listdir (self.convert_path (path))
-                if (versions and bool(re.match('.*;([0-9]+|\*)$', f)))
-                or (not (versions or bool(re.match('.*;([0-9]+|\*)$', f))))]
+        if re.match('.*;([0-9]+|\*)$', path):
+            res = []
+            p = self.convert_path (path)
+            for f in listdir (self.convert_path (path)):
+                m = re.match('(.*);(0|\*)$', f)
+                if m:
+                    if m.group(2) == '*':
+                        res.append(Direntry (m.group(1)))
+                    elif m.group(2) == '0':
+                        for r in listdir(p + '/' + f):
+                            res.append(Direntry (m.group(1) + ';' + r))
+            return res
+        else:
+            return [Direntry (f) for f in listdir (self.convert_path (path))
+                    if not re.match('.*;(0|\*)$', f)]
 
     def getdir(self, path):
         print '*** getdir', path
@@ -104,11 +171,15 @@ class Mnemosyne(Fuse):
 
     def mkdir ( self, path, mode ):
         print '*** mkdir', path, oct(mode)
-        return -errno.ENOSYS
+        (p,n) = getName(path)
+        d = self.real_path(p)+n+';*'
+        if not os.path.exists(d):
+            os.mkdir(d, mode)
+        return os.symlink(n+';*',self.real_path(path))
 
     def mknod ( self, path, mode, dev ):
         print '*** mknod', path, oct(mode), dev
-        return -errno.ENOSYS
+        return self.add_version(path, mode, dev)
 
     def open ( self, path, flags ):
         print '*** open', path, flags
@@ -132,12 +203,17 @@ class Mnemosyne(Fuse):
         return None
 
     def rename ( self, oldPath, newPath ):
+        """
+        check if newPath;0 / newPath;* exist (depending on it being a file or adir)
+        yes, errno.EEXIST (??) custom error would be nice here
+        no, do rename on both symlink and containing folder
+        """
         print '*** rename', oldPath, newPath
         return -errno.ENOSYS
 
     def rmdir ( self, path ):
         print '*** rmdir', path
-        return -errno.ENOSYS
+        return os.unlink(self.real_path(path))
 
     def statfs ( self ):
         print '*** statfs'
@@ -153,11 +229,11 @@ class Mnemosyne(Fuse):
 
     def unlink ( self, path ):
         print '*** unlink', path
-        return -errno.ENOSYS
+        return os.unlink(self.real_path(path))
 
     def utime ( self, path, times ):
         print '*** utime', path, times
-        return -errno.ENOSYS
+        return os.utime(self.real_path(path), times)
 
     def write ( self, path, buf, offset ):
         print '*** write', path, buf, offset
