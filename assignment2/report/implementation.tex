@@ -41,7 +41,34 @@ at all.
 Lastly a the symlink is updated to point to the new version if needed.
 
 \subsection{Cleaner}
-Write me!
+
+A version controlled filesystem that keeps a copy of all revision is bound to
+run out of space at some point. Even if we had used delta-compression to
+minimize the size of each revision we would only be extending the time we had
+before running out of space.
+
+To try to avoid this we have decided to implement a process that searches
+through all the files in the filesystem and deletes revisions that are unlikely
+to be needed.
+
+When the class is created it start at the root directory and lists all files
+anddirectories. For each file in the directory it examines the revisions of the
+file.
+This is done by getting a list of the revisions and looping through them
+starting with the oldest first.
+The following rules are used to identify revisions unlikely to be needed:
+
+\begin{itemize}
+\item It is older than one month. Newer than one month and they are more likely
+to be needed.
+\item It has a newer revision that is less than one hour old
+\end{itemize}
+
+Both of these are configurable as mentioned in the design-report. The
+configuration is done via the arguments given when calling the cleaner. For
+simplicity we have decided that the user should setup a cronjob to start the
+job, so when setting up the cronjob the two variables above can be controlled.
+
 
 \subsection{Mapping logical to physical files}
 
