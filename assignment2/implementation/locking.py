@@ -1,5 +1,9 @@
 import os
 
+FILENAME_LOCKED   = 'lock'   # filename used when a file is locked
+FILENAME_UNLOCKED = 'unlock' # filename used when a file is unlocked
+RENAME_TIMEOUT    = 2        # time to wait between each retry to lock file
+
 def lock_file (rootdir, file):
     # Change dir to file-revision-dir
     os.chdir(file)
