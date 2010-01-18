@@ -11,22 +11,6 @@ import re
 import errno   # for error number codes (ENOENT, etc)
                # - note: these must be returned as negatives
 
-def dirFromList(list):
-    """
-    Return a properly formatted list of items suitable to a directory listing.
-    [['a', 'b', 'c']] => [[('a', 0), ('b', 0), ('c', 0)]]
-    """
-    return [[(x, 0) for x in list]]
-
-def getDepth(path):
-    """
-    Return the depth of a given path, zero-based from root ('/')
-    """
-    if path == '/':
-        return 0
-    else:
-        return path.count('/')
-
 def getParts(path):
     """
     Return the slash-separated parts of a given path as a list
