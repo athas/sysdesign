@@ -294,7 +294,7 @@ if __name__ == "__main__":
     fuse.fuse_python_api = (0,2)
     fs = Mnemosyne()
     fs.parser.add_option(mountopt="root", metavar="PATH", default='/',
-                         help="directory for physical storage [default: %default]")
+                         help="directory for physical storage")
     fs.flags = 0
     fs.multithreaded = 0
     fs.parse(values=fs)
