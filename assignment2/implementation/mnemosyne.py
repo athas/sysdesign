@@ -120,6 +120,7 @@ class Mnemosyne(Fuse):
 
     def opendir(self, path):
         print '*** opendir', path
+        self.convert_path (path)
         return 0
 
     def readdir(self, path, info):
@@ -184,6 +185,7 @@ class Mnemosyne(Fuse):
 
     def open ( self, path, flags ):
         print '*** open', path, flags
+        self.convert_path (path)
         return None
 
     def read ( self, path, length, offset ):
