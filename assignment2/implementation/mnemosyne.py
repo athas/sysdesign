@@ -75,6 +75,7 @@ class Mnemosyne(Fuse):
         if not os.path.exists(d):
             # it didnt, create it
             os.mkdir(d)
+            os.mknod(d+'/'+FILENAME_UNLOCKED)
         else:
             # find the next version number
             vname = ''
