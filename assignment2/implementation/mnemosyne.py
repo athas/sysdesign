@@ -78,6 +78,7 @@ class Mnemosyne(Fuse):
         if not os.path.exists(d):
             # it didnt, create it
             os.mkdir(d)
+            os.mknod(d+'/'+FILENAME_UNLOCKED)
         else:
             # find the next version number
             vname = ''
@@ -120,6 +121,7 @@ class Mnemosyne(Fuse):
 
     def opendir(self, path):
         print '*** opendir', path
+        self.convert_path (path)
         return 0
 
     def readdir(self, path, info):
@@ -184,6 +186,7 @@ class Mnemosyne(Fuse):
 
     def open ( self, path, flags ):
         print '*** open', path, flags
+        self.convert_path (path)
         return None
 
     def read ( self, path, length, offset ):
