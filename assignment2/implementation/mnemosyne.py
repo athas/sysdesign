@@ -20,17 +20,6 @@ def getParts(path):
     else:
         return path.split('/')
 
-def getName(path):
-    """
-    Returns the last part of a path
-    """
-    m = re.match('(.*/)([^/]+)',path);
-    if m:
-        return (m.group(1), m.group(2))
-    else:
-        return ('/','')
-
-
 class Mnemosyne(Fuse):
 
     def __init__(self, *args, **kw):
@@ -81,8 +70,8 @@ class Mnemosyne(Fuse):
 
         # check if dir with file versions exist
         v = 0        
-        (p,n) = getName(path)
-        d = self.real_path(p)+n+';0'
+        (p,n) = os.path.split(path)
+        d = self.real_path(p)+'/'+n+';0'
         if not os.path.exists(d):
             # it didnt, create it
             os.mkdir(d)
