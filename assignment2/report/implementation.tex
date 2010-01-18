@@ -13,9 +13,21 @@
  
 \maketitle
 
-\section{Introduction}
+\section{General Summary}
+Write me!
 
-Damn, it works.
+\section{Interesting aspects}
+\subsection{add_version}
+This functions task is to create new files or copy old ones when a new version is requested. It is called from mknod, truncate and write. The result is always to ensure the symlink to the file exists and may be to either create an entirely new file directory along with a new version and lock file, create just a new version or do nothing at all.
+
+The new directory is obviously created if nothing exist already and will only be the case on mknod calls. A new version is created on most truncates and the correct version number for the new version is given by looking at the existing versions in the directory and incrementing this number. Since we pr design skip a number if a file has been deleted, a check is made if the symlink to the newest version exists.
+
+It might also choose to not create a new version at all, but use the oldest in the case where the newest versions filesize is 0. The rationale behind this is an empty version is not interesting to have at all.
+
+Lastly a the symlink is updated to point to the new version if needed.
+
+\subsection{Cleaner}
+Write me!
  
 \end{document}
  
