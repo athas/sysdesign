@@ -40,7 +40,6 @@ def getName(path):
     """
     Returns the last part of a path
     """
-    print "path:",path
     m = re.match('(.*/)([^/]+)',path);
     if m:
         return (m.group(1), m.group(2))
@@ -82,41 +81,61 @@ class Mnemosyne(Fuse):
         return res + path
 
     def add_version(self, path, mode=-1, dev=-1):
-        # intialize version step counter
-        i = 1
+        print '****** add_version', path, oct(mode), dev
         
-        (p,n) = getName(path)
+        # check if symlink to newest version exists
+        nolink = True
+        if os.path.exists(self.real_path(path)):
+            nolink = False
+
+        # version step size
+        if nolink:
+            # skip a version to indicate deleted file
+            i = 2
+        else:
+            i = 1
+
         # check if dir with file versions exist
+        v = 0        
+        (p,n) = getName(path)
         d = self.real_path(p)+n+';0'
         if not os.path.exists(d):
             # it didnt, create it
             os.mkdir(d)
         else:
-            # check if symlink to newest version exists
-            if os.path.exists(self.real_path(path)):
-                # remove it
-                os.unlink(self.real_path(path))
-            else:
-                # it didnt so this would recreate a deleted file, set i to skip a version
-                i = 2
-        
-        # find the next version number, mode number and device number
-        v = 0
-        stat = False
-        for file in listdir(d):
+            # find the next version number
+            vname = ''
+            stat = False
+            for file in listdir(d):
+                try:
+                    if int(file) >= v:
+                        v = int(file)+i
+                        vname = d+'/'+file
+                        stat = os.stat(vname)
+                except ValueError:
+                    pass
+
+        # create the new version only if:
+        #   - its a completely new version, v == 0
+        #   - the file hasent been deleted and thus should be skipped, i > 1
+        # copy old version if:
+        #   - the newest version isent empty, st_size > 0
+        # else dont add a new version, use the newest one since its empty
+        if v == 0 or i > 1:
+            os.mknod(d+'/'+str(v), mode, dev)
+        elif stat != False and stat.st_size > 0:
+            os.mknod(d+'/'+str(v), stat.st_mode, stat.st_dev)
+            fd = open(self.convert_path(path), O_WRONLY)
             try:
-                if int(file) >= v:
-                    v = int(file)+i
-                if stat == False:
-                    stat = os.stat(d+'/'+file)
-                    mode = stat.st_mode
-                    dev = stat.st_dev
-            except ValueError:
-                pass
-        # create the new version
-        os.mknod(d+'/'+str(v), mode, dev)
+                os.write(fd, self.read(path, stat.st_size, 0))
+            finally:
+                close(fd)
+        else:
+            return None
 
         # make the new symlink
+        if not nolink:
+            os.unlink(self.real_path(path))
         return os.symlink(n+';0/'+str(v),self.real_path(path))
 
     def getattr(self, path):
@@ -203,13 +222,41 @@ class Mnemosyne(Fuse):
         return None
 
     def rename ( self, oldPath, newPath ):
+        print '*** rename', oldPath, newPath
         """
         check if newPath;0 / newPath;* exist (depending on it being a file or adir)
         yes, errno.EEXIST (??) custom error would be nice here
         no, do rename on both symlink and containing folder
         """
-        print '*** rename', oldPath, newPath
-        return -errno.ENOSYS
+        
+        # check if the target file/directory already exist
+        (pold,nold) = getName(oldPath)
+        (pnew,nnew) = getName(newPath)
+        if os.path.isdir(self.real_path(oldPath)):
+            if os.path.exists(self.real_path(newPath)+';*'):
+                return errno.EEXIST
+            else:
+                # rename the dir
+                os.rename(self.real_path(pold)+nold+';*',self.real_path(pnew)+nnew+';*')
+                # unlink symlink
+                unlink(self.real_path(oldPath))
+                # create new symlink
+                os.symlink(nnew+';*', self.real_path(newPath))
+        else:
+            if os.path.exists(self.real_path(newPath)+';0'):
+                return errno.EEXIST
+            else:
+                # get the most reson version number
+                (p,n) = getName( self.convert_path(oldPath) )
+                # rename the file dir
+                os.rename(self.real_path(pold)+nold+';0',self.real_path(pnew)+nnew+';0')
+                # unlink symlink
+                print self.real_path(oldPath)
+                unlink(self.real_path(oldPath))
+                # create new symlink
+                print self.real_path(newPath), nnew+';0/'+n
+                os.symlink(nnew+';0/'+n, self.real_path(newPath))
+        return None
 
     def rmdir ( self, path ):
         print '*** rmdir', path
@@ -225,7 +272,16 @@ class Mnemosyne(Fuse):
 
     def truncate ( self, path, size ):
         print '*** truncate', path, size
-        return -errno.ENOSYS
+
+        # add a version if needed
+        self.add_version(path)
+
+        fd = open(self.convert_path(path), O_WRONLY)
+        try:
+            os.ftruncate(fd, size)
+        finally:
+            close (fd)
+        return None
 
     def unlink ( self, path ):
         print '*** unlink', path
@@ -237,7 +293,17 @@ class Mnemosyne(Fuse):
 
     def write ( self, path, buf, offset ):
         print '*** write', path, buf, offset
-        return -errno.ENOSYS
+        
+        # add a version if needed
+        self.add_version(path)
+
+        fd = open(self.convert_path(path), O_WRONLY)
+        try:
+            os.lseek(fd, offset, SEEK_SET)
+            return os.write(fd, buf)
+        finally:
+            close (fd)
+
 
 if __name__ == "__main__":
     fuse.fuse_python_api = (0,2)
