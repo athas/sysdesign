@@ -6,10 +6,13 @@ from time import time
 
 import stat    # for file properties
 import os      # for filesystem modes (O_RDONLY, etc)
+import time
 from os import *
 import re
 import errno   # for error number codes (ENOENT, etc)
                # - note: these must be returned as negatives
+
+from locking import *
 
 def getParts(path):
     """
@@ -118,6 +121,7 @@ class Mnemosyne(Fuse):
 
     def opendir(self, path):
         print '*** opendir', path
+        self.convert_path (path)
         return 0
 
     def readdir(self, path, info):
@@ -125,14 +129,20 @@ class Mnemosyne(Fuse):
         if re.match('.*;([0-9]+|\*)$', path):
             res = []
             p = self.convert_path (path)
-            for f in listdir (self.convert_path (path)):
+            for f in listdir (p):
                 m = re.match('(.*);(0|\*)$', f)
                 if m:
                     if m.group(2) == '*':
                         res.append(Direntry (m.group(1)))
                     elif m.group(2) == '0':
-                        for r in listdir(p + '/' + f):
-                            res.append(Direntry (m.group(1) + ';' + r))
+                        while not lock_file (p + '/' + f):
+                            pass
+                        try:
+                            for r in listdir(p + '/' + f):
+                                if r != FILENAME_LOCKED and r != FILENAME_UNLOCKED:
+                                    res.append(Direntry (m.group(1) + ';' + r))
+                        finally:
+                            unlock_file(p + '/' + f)
             return res
         else:
             return [Direntry (f) for f in listdir (self.convert_path (path))
@@ -176,6 +186,7 @@ class Mnemosyne(Fuse):
 
     def open ( self, path, flags ):
         print '*** open', path, flags
+        self.convert_path (path)
         return None
 
     def read ( self, path, length, offset ):
