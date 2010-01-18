@@ -1,25 +1,23 @@
 import os
+import time
 
 FILENAME_LOCKED   = 'lock'   # filename used when a file is locked
 FILENAME_UNLOCKED = 'unlock' # filename used when a file is unlocked
 RENAME_TIMEOUT    = 2        # time to wait between each retry to lock file
 
-def lock_file (rootdir, file):
+def lock_file (file):
     # Change dir to file-revision-dir
-    os.chdir(file)
     for t in range(1,4):
         try: 
-            os.rename(FILENAME_UNLOCKED, FILENAME_LOCKED)
-            break
+            os.rename(file + '/' + FILENAME_UNLOCKED, file + '/' + FILENAME_LOCKED)
+            return True
         except:
             print 'Locking file failed ' + str(t) + ' times'
             time.sleep(RENAME_TIMEOUT)
-    os.chdir(rootdir)
+    return False
 
-def unlock_file (rootdir, file):
-    os.chdir(file)
+def unlock_file (file):
     try:
-        os.rename(FILENAME_LOCKED, FILENAME_UNLOCKED)
+        os.rename(file + '/' + FILENAME_LOCKED, file + '/' + FILENAME_UNLOCKED)
     except:
         print 'Failed in unlocking file'
-    os.chdir(rootdir)
