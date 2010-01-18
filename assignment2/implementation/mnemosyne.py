@@ -234,7 +234,7 @@ class Mnemosyne(Fuse):
         (pnew,nnew) = getName(newPath)
         if os.path.isdir(self.real_path(oldPath)):
             if os.path.exists(self.real_path(newPath)+';*'):
-                return errno.EEXIST
+                return -errno.EEXIST
             else:
                 # rename the dir
                 os.rename(self.real_path(pold)+nold+';*',self.real_path(pnew)+nnew+';*')
@@ -244,7 +244,7 @@ class Mnemosyne(Fuse):
                 os.symlink(nnew+';*', self.real_path(newPath))
         else:
             if os.path.exists(self.real_path(newPath)+';0'):
-                return errno.EEXIST
+                return -errno.EEXIST
             else:
                 # get the most reson version number
                 (p,n) = getName( self.convert_path(oldPath) )
