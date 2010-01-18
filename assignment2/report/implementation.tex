@@ -42,6 +42,41 @@ Lastly a the symlink is updated to point to the new version if needed.
 
 \subsection{Cleaner}
 Write me!
- 
+
+\subsection{Mapping logical to physical files}
+
+A core part of our implementation is mapping a logical file path.
+There are three interestingly distinct kinds of file paths:
+
+\begin{description}
+\item[Plain path,] for example \texttt{/foo/bar/baz} which is a
+  reference to the file \texttt{baz} in the folder \texttt{/foo/bar}.
+\item[A wildcard directory reference,] such as \texttt{/foo/bar;*},
+  which is a reference to directory \texttt{bar} in the folder
+  \texttt{/foo}, and showing all versions of files in the directory.
+\item[A specificion revision reference,] such as
+  \texttt{/foo/bar/baz;0}, which would be version $0$ of the file
+  \texttt{baz} in the folder \texttt{/foo/bar}.
+\end{description}
+
+All can be be divided into \textit{parts}, separated by slashes, and
+the mapping operates by processing each path in turn.  As all logical
+files and folders correspond to a symbolic link by their logical name,
+we can merely read the destination (with the \texttt{readlink()}
+system call) of each link in turn.  If the part contains a version
+reference, the symlink (which points to the newest version) is not
+naively followed, but the desired version is extracted from the
+corresponding directory.  If the part is a wildcard directory
+reference, everything past the semicolon is ignored for finding the
+destination: the decision to show all versions of files is not
+important to the path mapping itself, as they are all stored in the
+same underlying directory anyway, and is instead handled in the
+implementation of the \texttt{readdir} operation. If a symlink by the
+name cannot be found, it means that the path as a whole refers to a
+destination that does not exist, and a \textit{file not found} error
+is signalled.
+
+The implementation of this is contained in the \texttt{convert\_path}
+method.
+
 \end{document}
- 
