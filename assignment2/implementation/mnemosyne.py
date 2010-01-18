@@ -174,8 +174,8 @@ class Mnemosyne(Fuse):
 
     def mkdir ( self, path, mode ):
         print '*** mkdir', path, oct(mode)
-        (p,n) = getName(path)
-        d = self.real_path(p)+n+';*'
+        (p,n) = os.path.split(path)
+        d = self.real_path(p)+'/'+n+';*'
         if not os.path.exists(d):
             os.mkdir(d, mode)
         return os.symlink(n+';*',self.real_path(path))
@@ -215,14 +215,14 @@ class Mnemosyne(Fuse):
         """
         
         # check if the target file/directory already exist
-        (pold,nold) = getName(oldPath)
-        (pnew,nnew) = getName(newPath)
+        (pold,nold) = os.path.split(oldPath)
+        (pnew,nnew) = os.path.split(newPath)
         if os.path.isdir(self.real_path(oldPath)):
             if os.path.exists(self.real_path(newPath)+';*'):
                 return -errno.EEXIST
             else:
                 # rename the dir
-                os.rename(self.real_path(pold)+nold+';*',self.real_path(pnew)+nnew+';*')
+                os.rename(self.real_path(pold)+'/'+nold+';*',self.real_path(pnew)+'/'+nnew+';*')
                 # unlink symlink
                 unlink(self.real_path(oldPath))
                 # create new symlink
@@ -232,9 +232,9 @@ class Mnemosyne(Fuse):
                 return -errno.EEXIST
             else:
                 # get the most reson version number
-                (p,n) = getName( self.convert_path(oldPath) )
+                (p,n) = os.path.split( self.convert_path(oldPath) )
                 # rename the file dir
-                os.rename(self.real_path(pold)+nold+';0',self.real_path(pnew)+nnew+';0')
+                os.rename(self.real_path(pold)+'/'+nold+';0',self.real_path(pnew)+'/'+nnew+';0')
                 # unlink symlink
                 print self.real_path(oldPath)
                 unlink(self.real_path(oldPath))
