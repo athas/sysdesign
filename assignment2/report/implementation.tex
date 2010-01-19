@@ -14,7 +14,23 @@
 \maketitle
 
 \section{General Summary}
-Write me!
+
+We have implemented our full design, with no known deficiencies not
+explicitly part of the design specification, in a program we have
+termed \textit{Mnemosyne}, after the Greek goddess of memory.
+
+Mnemosyne works by exposing a file system at a specified \textit{mount
+  point}, while storing (and reading) data from a given \textit{root
+  directory}.  This latter directory must be empty at the onset, and
+only Mnemosyne should ever be allowed to modify its contents, as our
+system is not robust in the face of data corruption.  Ideally, the
+directory would be hidden away in some system folder (somewhere in
+\texttt{/var} would be suitable on Unix systems), where there is no
+risk the user might accidentally destroy it.
+
+Mnemosyne is started as follows:\\
+\texttt{python mnemosyne.py \textit{mount-point} -o
+  root=\textit{root-directory}}.
 
 \section{Interesting aspects}
 
