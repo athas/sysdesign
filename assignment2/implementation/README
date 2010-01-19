@@ -1,0 +1,7 @@
+The file system implementation is contained in mnemosyne.py.  It
+depends on whatever version of python-fuse is in Debian (it appears to
+be version 0.2).
+
+To run, use the following command:
+
+python mnemosyne.py <mountpoint> -f -o root=<data storage>
