@@ -5,3 +5,20 @@ be version 0.2).
 To run, use the following command:
 
 python mnemosyne.py <mountpoint> -f -o root=<data storage>
+
+A cleaner designed to remove unneeded revisions is available.
+
+To run, use the following command:
+python cleaner.py --dir=<data storage> --landmarktime=<ms>
+    --landmarklimit=<days>
+--dir
+    Should point to the root of the data storage.
+
+--landmarktime
+    Sets the timelimit between revisions used
+    in the landmark-policy. If two revisions are dated closer
+    than the specified limit the older of the two are deleted.
+
+--landmarklimit
+    Specifies where the limit between KeepAll and Landmark-
+    policies are. This is measured in days.
