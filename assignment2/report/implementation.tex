@@ -13,11 +13,10 @@
  
 \maketitle
 
-\section{General Summary}
+\section{Implementation Summary}
 
-We have implemented our full design, with no known deficiencies not
-explicitly part of the design specification, in a program we have
-termed \textit{Mnemosyne}, after the Greek goddess of memory.
+We have implemented our design as a program we have termed
+\textit{Mnemosyne}, after the Greek goddess of memory.
 
 Mnemosyne works by exposing a file system at a specified \textit{mount
   point}, while storing (and reading) data from a given \textit{root
@@ -28,9 +27,28 @@ directory would be hidden away in some system folder (somewhere in
 \texttt{/var} would be suitable on Unix systems), where there is no
 risk the user might accidentally destroy it.
 
+We make use of a Python wrapper around FUSE (of which there are
+several, but we use the one that is in Debian under the name
+\texttt{python-fuse}).  The general structure is that of defining a
+subclass of \texttt{Fuse} that defines methods corresponding to FUSE
+operations (\texttt{readdir}, \texttt{open}, \texttt{rename}, etc).
+Additionally, we also wrote an entirely separate program for cleaning
+the revision history of old entries (implemented in
+\texttt{cleaner.py}).  This is simpler than running cleanup threads in
+the main filesystem process, and our file-based locking mechanism
+ensures that we do not get race conditions.
+
 Mnemosyne is started as follows:\\
 \texttt{python mnemosyne.py \textit{mount-point} -o
   root=\textit{root-directory}}.
+
+\section{General Summary}
+
+We have implemented every part of our design, with no known deviations
+or bugs.  We have not rigorously tested our implementation, however,
+instead relying on relatively simplistic empirical methods (``try it
+and see if it breaks''), so we will hesitate to claim perfection in
+all areas of our work.
 
 \section{Interesting aspects}
 
