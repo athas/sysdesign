@@ -85,11 +85,17 @@ To try to avoid this we have decided to implement a process that searches
 through all the files in the filesystem and deletes revisions that are unlikely
 to be needed.
 
-When the class is created it start at the root directory and lists all files
-anddirectories. For each file in the directory it examines the revisions of the
-file.
-This is done by getting a list of the revisions and looping through them
-starting with the oldest first.
+The cleaner works by examining the current directory and identifying all the 
+sub-directories which represent files and directories. The directories are using the suffix ";*"
+for directories and ";0" for files.
+Directories are handled by recursively creating instances of the cleaner-object
+on the directories.
+A directory representing a file is handled by first locking the file by renaming
+the unlock file to lock. This ensures that the user doesn't try to access the
+file while the cleaner is working.
+Then each file is examined from the oldest revision to the newest. If the
+revision match the criterias described below it is removed or else it is left
+untouched.
 The following rules are used to identify revisions unlikely to be needed:
 
 \begin{itemize}
@@ -101,8 +107,18 @@ to be needed.
 Both of these are configurable as mentioned in the design-report. The
 configuration is done via the arguments given when calling the cleaner. For
 simplicity we have decided that the user should setup a cronjob to start the
-job, so when setting up the cronjob the two variables above can be controlled.
+cleaner, so when setting up the cronjob the two variables above can be controlled.
 
+Besides being able to configure the two settings described above, it is also
+nessesary to specify where the root of the versioned filesystem is located on
+the drive.
+
+So the cleaner is called by using the following arguments:\\
+\texttt{python cleaner.py --dir=\textit{filesystem-dir}
+--landmarktime=\textit{landmark-time}
+--landmarklimit=\textit{landmark-limit}}
+
+The cleaner exits quietly when done.
 
 \subsection{Mapping logical to physical files}
 
