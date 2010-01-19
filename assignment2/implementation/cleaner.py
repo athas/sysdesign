@@ -1,5 +1,7 @@
 import os
 import time
+import sys
+import getopt
 from datetime import datetime, timedelta
 from time import mktime
 from locking import *
@@ -9,28 +11,12 @@ FILENAME_UNLOCKED = 'unlock' # filename used when a file is unlocked
 RENAME_TIMEOUT    = 2        # time to wait between each retry to lock file
 FILE_SUFFIX       = ';0'     # suffix for a file's revision-directory
 DIR_SUFFIX        = ';*'     # suffix for a directory's revision-directory
-TEST              = False    # Enables testmode
-TEST_DATA = {
-    'file1.txt;0' :
-        [['file1.txt;1', 1213270794.0],
-         ['file1.txt;2', 1213271798.0],
-         ['file1.txt;3', mktime((datetime.now()+timedelta(days=-31)).timetuple())],
-         ['file1.txt;4', mktime((datetime.now()+timedelta(days=-29)).timetuple())],
-         ['file1.txt;5', mktime((datetime.now()+timedelta(days=-1)).timetuple())]],
-    'file2.txt;0' :
-        [['file2.txt;1', 1213270794.0],
-         ['file2.txt;2', 1213271798.0],
-         ['file2.txt;3', 1213271898.0],
-         ['file2.txt;4', 1213271998.0],
-         ['file2.txt;5', mktime((datetime.now()+timedelta(days=-1)).timetuple())]]
-    }
-
 
 class Cleaner:
 
     def __init__(self, dir, landmark_time, landmark_limit):
-       self.landmark_time = landmark_time
-       self.landmark_limit = landmark_limit
+       self.landmark_time = float(landmark_time)
+       self.landmark_limit = float(landmark_limit)
        self.rootdir = dir
        self.cleaner()
 
@@ -38,11 +24,7 @@ class Cleaner:
     def list_dir (self):
         files = list()
         dirs = list()
-        entries = list()
-        if TEST:
-            entries = TEST_DATA.keys()
-        else:
-            entries = os.listdir(self.rootdir)
+        entries = os.listdir(self.rootdir)
 
         for entry in entries:
             if entry.endswith(FILE_SUFFIX):
@@ -54,13 +36,12 @@ class Cleaner:
     # Creates a list containing all file-revisions and their timestamp.
     def list_revisions (self, file):
         revisions = list()
-        if TEST:
-            return TEST_DATA[file]
 
         for rev in os.listdir(file):
             if rev not in [FILENAME_LOCKED, FILENAME_UNLOCKED]:
-                time = os.path.getctime(file) # should be good enough, as files should never be changed after a newer revision is available
-                revisions.append([self.rootdir + file + rev,time])
+                fullpath = file + '/' + rev
+                time = os.path.getctime(fullpath) # should be good enough, as files should never be changed after a newer revision is available
+                revisions.append([fullpath,time])
 
         return sorted(revisions)
 
@@ -70,19 +51,16 @@ class Cleaner:
         last_filename = ''
         
         # The time it moves from KeepAll- to Landmark-retention
-        landmark_limit = mktime((datetime.now()+timedelta(days=-30)).timetuple())
+        landmark_limit = mktime((datetime.now()-timedelta(days=self.landmark_limit)).timetuple())
 
         for rev,time in revisions:
             if time > landmark_limit:
-                # If the revision is never than one month, let the rest be.
+                # If the revision is newer than one month, let the rest be.
                 break;
             else:
                 if time - self.landmark_time < last_timestamp:
                     # Remove old revision
-                    if TEST:
-                        print 'Removing ' + last_filename
-                    else:
-                        os.remove(last_filename)
+                    os.remove(last_filename)
             last_filename = rev
             last_timestamp = time
 
@@ -93,6 +71,31 @@ class Cleaner:
                 self.clean_file(file)
                 unlock_file(file)
         for dir in dirs:
-            Cleaner(rootdir+dir, self.landmark_time, self.landmark_limit)
+            Cleaner(dir + '/', self.landmark_time, self.landmark_limit)
 
-cleaner = Cleaner('/home/troels/test/', 3600, 31)
+def main():
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "", ['landmarktime=', 'landmarklimit=', 'dir='])
+    except getopt.GetoptError, err:
+        print str(err)
+        sys.exit(2)
+    root = ""
+    landmark_time = 0
+    landmark_limit = 0
+    for o, a in opts:
+        if o == "--dir":
+            root = a
+        elif o == "--landmarktime":
+            landmark_time = a
+        elif o == "--landmarklimit":
+            landmark_limit = a
+        else:
+            sys.exit(2)
+    if root != "" and landmark_time > 0 and landmark_limit > 0:
+        Cleaner(root, landmark_time, landmark_limit)
+    else:
+        print('usage: cleaner.py --dir=<filesystem dir> --landmarktime=<landmark time> --landmarklimit=<landmark_limit>')
+        sys.exit(2)
+
+if __name__ == "__main__":
+    main()
